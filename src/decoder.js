@@ -80,6 +80,24 @@ export default class Decoder {
     }
     return null;
   }
+  /**
+   * Get coded constructor parameters
+   *
+   * @param Object contract creation code
+   * @return ""
+   */
+  getCodedContractData(contractCreationCode) {
+    if (this.methodIDs.constructor.type !== 'constructor') throw new Error(`Expected constructor got${contractCreationCode}`);
+    const abiItem = this.methodIDs.constructor;
+    if (abiItem) {
+      const params = abiItem.inputs.map(item => item.type);
+      const solidityTypes = SolidityCoder.getSolidityTypes(params);
+      const offsetData = SolidityCoder.getOffsets(params, solidityTypes);
+      const codedConstructor = contractCreationCode.slice(-64 * offsetData.length);
+      return codedConstructor;
+    }
+    throw new Error('Getting contract creation data failed');
+  }
 
   /**
    * Decode transaction input data

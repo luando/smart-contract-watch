@@ -29,10 +29,14 @@ const addressAbiMap = {};
 const transactionHandler = async (transaction) => {
   let decodedLogs;
   let decodedInputDataResult;
+  let codedConstructor = '';
+
   if (isContractCreationTransaction(transaction.to)) {
     try {
       decodedInputDataResult = addressAbiMap[transaction.contractAddress]
         .decodeConstructor(transaction.input);
+      codedConstructor = addressAbiMap[transaction.contractAddress]
+        .getCodedContractData(transaction.input);
       decodedLogs = null;
     } catch (error) {
       logger.error(`txHash: ${transaction.hash} ${error.message}`);
@@ -50,7 +54,8 @@ const transactionHandler = async (transaction) => {
       logger.error(`txHash: ${transaction.hash} ${error.message}`);
     }
   }
-  output({ transaction, decodedInputDataResult, decodedLogs }, getEnv('OUTPUT_TYPE'));
+  // console.log(codedConstructor);
+  output({ transaction, codedConstructor, decodedInputDataResult, decodedLogs }, getEnv('OUTPUT_TYPE'));
 };
 
 

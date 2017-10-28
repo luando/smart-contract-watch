@@ -4,6 +4,7 @@ export default (data) => {
   let functionParams = '';
   let eventText = '';
   let extraMessage = '';
+  let unDecodedConstructor = '';
   if (data.decodedInputDataResult) {
     functionName = data.decodedInputDataResult.name;
     if (data.decodedInputDataResult.params) {
@@ -11,7 +12,9 @@ export default (data) => {
         `${param.name}=${param.value}`);
     }
   }
-
+  if (data.codedConstructor) {
+    unDecodedConstructor = `CONSTRUCTOR CODE:${data.codedConstructor}`;
+  }
   if (data.decodedLogs) {
     data.decodedLogs.forEach((log) => {
       eventText = `${log.name}(`;
@@ -30,5 +33,5 @@ export default (data) => {
     extraMessage = 'Suspected fail';
   }
 
-  return `tshash:${txHash} ${functionName}(${functionParams}) ${eventText} ${extraMessage}`;
+  return `tshash:${txHash} ${unDecodedConstructor} ${functionName}(${functionParams}) ${eventText} ${extraMessage}`;
 };
