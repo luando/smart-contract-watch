@@ -1,4 +1,6 @@
+import bluebird from 'bluebird';
 import web3Instance from './web3Provider';
+
 /**
  * Check is address correct
  * @param address
@@ -29,5 +31,8 @@ const web3Utils =
   validateBlockNumber,
   getEtherNetworkId,
 };
+
+export const getLastBlock = () => bluebird.promisify(web3Instance.eth.getBlockNumber)();
+
 
 export default web3Utils;

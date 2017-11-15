@@ -2,8 +2,8 @@ import program from 'commander';
 import fs from 'fs';
 import path from 'path';
 import YAML from 'yamljs';
-import { defaultBlockNumber } from './config';
-import { isAddress, validateBlockNumber } from './web3/utils';
+import { defaultBlockNumber, watchingConfigPath } from './config';
+import { isAddress, validateBlockNumber, getLastBlock } from './web3/utils';
 import { isPathExist } from './utils';
 
 /**
@@ -14,8 +14,8 @@ import { isPathExist } from './utils';
 const list = val => val.split(',');
 
 
-export default (filePath, lastBlockNumber) => {
-  const watchConfig = YAML.load(filePath);
+export default async () => {
+  const watchConfig = YAML.load(watchingConfigPath);
   program
     .version('0.1.0')
     .option('-a, --addresses <n>', 'List of address', list)
@@ -24,8 +24,13 @@ export default (filePath, lastBlockNumber) => {
     .option('-q, --quick [n]', 'Quick Mode', typeof watchConfig.quick !== 'undefined' ? watchConfig.quick : false)
     .option('-s, --save-state [n]', 'Save state', typeof watchConfig.saveState !== 'undefined' ? watchConfig.saveState : null)
     .option('-n, --node', 'Node address', typeof watchConfig.nodeAddresss !== 'undefined' ? watchConfig.nodeAddresss : null)
+    .option('-l, --log-level', 'Log level', typeof watchConfig.logLevel !== 'undefined' ? watchConfig.logLevel : null)
+    .option('-p, --socket-port', 'IO socket port number', typeof watchConfig.socketPort !== 'undefined' ? watchConfig.socketPort : null)
+    .option('-o,--output-type', 'Output type', typeof watchConfig.outputType !== 'undefined' ? watchConfig.outputType : null)
+    .option('-e,--access-token', 'etherscan accssess token', typeof watchConfig.AccessToken !== 'undefined' ? watchConfig.AccessToken : null)
     .parse(process.argv);
 
+  // TODO: remove this as parameters might be in file or env
   if (typeof program === 'undefined') { throw new Error('No args are specifed in the command or in the .watch.yml file'); }
 
   let addresses = null;
@@ -63,7 +68,7 @@ export default (filePath, lastBlockNumber) => {
   addresses.forEach((address) => {
     if (!isAddress(address)) { throw new Error(`${address} is not valid address`); }
   });
-
+  const lastBlockNumber = await getLastBlock();
   validateBlockNumber(lastBlockNumber, from);
   validateBlockNumber(lastBlockNumber, to);
 

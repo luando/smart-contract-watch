@@ -6,7 +6,7 @@ const getWeb3 = () => {
   if (typeof web3 !== 'undefined') {
     web3 = new Web3(web3.currentProvider);
   } else {
-    // set the provider you want from Web3.providers
+    // TODO: remove this dependancy on ENV
     web3 = new Web3(new Web3.providers.HttpProvider(getEnv('RPC_URL')));
   }
   return web3;

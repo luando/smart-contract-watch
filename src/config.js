@@ -2,10 +2,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-export const getEnv = (variableName) => {
-  if (typeof process.env[variableName] === 'undefined') { throw new Error('Enviroment variable is not eixsts'); }
-  return process.env[variableName];
-};
+export const getEnv = variableName => process.env[variableName];
 
 export const defaultBlockNumber = -1;
 
