@@ -56,19 +56,19 @@ const transactionHandler = async (transaction) => {
  * The main function that has the full steps
  */
 const main = async () => {
-  const { from, to, addresses, quickMode,
-    lastBlockNumberFilePath } = await command();
-  logger.debug('Start process');
-
-  const PromisifiedAbiObjects = addresses.map(async address => (
-    { address, abi: await getABI(address) }
-  ));
-
-  (await Promise.all(PromisifiedAbiObjects)).forEach((object) => {
-    addressAbiMap[object.address.toLowerCase()] = new Decoder(object.abi);
-  });
-
   try {
+    const { from, to, addresses, quickMode,
+      lastBlockNumberFilePath } = await command();
+    logger.debug('Start process');
+
+    const PromisifiedAbiObjects = addresses.map(async address => (
+      { address, abi: await getABI(address) }
+    ));
+
+    (await Promise.all(PromisifiedAbiObjects)).forEach((object) => {
+      addressAbiMap[object.address.toLowerCase()] = new Decoder(object.abi);
+    });
+
     const jsonRpc = new JsonRpc(addresses, from, to, lastBlockNumberFilePath, transactionHandler);
 
     await jsonRpc.scanBlocks(quickMode);
