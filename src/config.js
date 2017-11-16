@@ -8,6 +8,8 @@ export const defaultBlockNumber = -1;
 
 export const defaultFromBlockNumber = 0;
 
+export const saveStateFileName = 'last-block-number.json';
+
 export const watchingConfigPath = '.watch.yml';
 
 export const networksById = {
