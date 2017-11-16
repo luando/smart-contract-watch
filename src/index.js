@@ -1,10 +1,9 @@
-import logger, { logError } from './logger';
-import command from './command';
+import loggerInit, { logError } from './logger';
+import { initCommands } from './command';
 import Decoder from './decoder';
 import JsonRpc from './jsonrpc';
 import { getABI } from './etherscan';
 import output from './output';
-import { getEnv } from './config';
 import { isContractCreationTransaction } from './utils';
 
 /**
@@ -23,6 +22,8 @@ import { isContractCreationTransaction } from './utils';
  */
 
 const addressAbiMap = {};
+let variableClass;
+let logger;
 
 const transactionHandler = async (transaction) => {
   let decodedLogs;
@@ -33,22 +34,22 @@ const transactionHandler = async (transaction) => {
         .decodeConstructor(transaction.input);
       decodedLogs = null;
     } catch (error) {
-      logger.error(`txHash: ${transaction.hash} ${error.message}`);
+      logError(`txHash: ${transaction.hash} ${error.message}`, variableClass.outputType);
     }
   } else {
     try {
       decodedInputDataResult = addressAbiMap[transaction.to].decodeMethod(transaction.input);
     } catch (error) {
-      logger.error(`txHash: ${transaction.hash} ${error.message}`);
+      logError(`txHash: ${transaction.hash} ${error.message}`, variableClass.outputType);
     }
 
     try {
       decodedLogs = addressAbiMap[transaction.to].decodeLogs(transaction.logs);
     } catch (error) {
-      logger.error(`txHash: ${transaction.hash} ${error.message}`);
+      logError(`txHash: ${transaction.hash} ${error.message}`, variableClass.outputType);
     }
   }
-  output({ transaction, decodedInputDataResult, decodedLogs }, getEnv('OUTPUT_TYPE'));
+  output({ transaction, decodedInputDataResult, decodedLogs }, variableClass.outputType);
 };
 
 
@@ -57,27 +58,34 @@ const transactionHandler = async (transaction) => {
  */
 const main = async () => {
   try {
-    const { from, to, addresses, quickMode,
-      lastBlockNumberFilePath } = await command();
+    // @TODO: find a solution for variable handeling
+    variableClass = await initCommands();
+    logger = loggerInit(variableClass.logLevel);
+    console.log(logger);
     logger.debug('Start process');
 
-    const PromisifiedAbiObjects = addresses.map(async address => (
-      { address, abi: await getABI(address) }
+    const PromisifiedAbiObjects = variableClass.addresses.map(async address => (
+      { address, abi: await getABI(address, variableClass) }
     ));
 
     (await Promise.all(PromisifiedAbiObjects)).forEach((object) => {
       addressAbiMap[object.address.toLowerCase()] = new Decoder(object.abi);
     });
 
-    const jsonRpc = new JsonRpc(addresses, from, to, lastBlockNumberFilePath, transactionHandler);
+    const jsonRpc = new JsonRpc(variableClass.addresses,
+      variableClass.from, variableClass.to,
+      variableClass.lastBlockNumberFilePath, logger,
+      transactionHandler);
 
-    await jsonRpc.scanBlocks(quickMode);
+    await jsonRpc.scanBlocks(variableClass.quickMode);
     logger.info('Finish scanning all the blocks');
   } catch (e) {
+    console.log(e);
     logError(e);
   }
 };
 
 main().catch((e) => {
+  console.log(e);
   logError(e);
 });

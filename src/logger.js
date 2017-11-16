@@ -1,25 +1,24 @@
 import winston from 'winston';
-import { getEnv } from './config';
 
-const loggerConsoleOptions = {
-  timestamp: false,
-  level: getEnv('LOG_LEVEL'),
-  colorize: false,
-  formatter: options => `${options.message}`,
+const logger = (logLevel) => {
+  const loggerConsoleOptions = {
+    timestamp: false,
+    level: logLevel,
+    colorize: false,
+    formatter: options => `${options.message}`,
+  };
+  return new (winston.Logger)({
+    transports: [
+      new (winston.transports.Console)(loggerConsoleOptions),
+    ] });
 };
-
-const logger = new (winston.Logger)({
-  transports: [
-    new (winston.transports.Console)(loggerConsoleOptions),
-  ] });
-
 /**
  * This will print out the error as json formatted
- * @param {*} error 
- * @param {*} customMessage 
+ * @param {*} error
+ * @param {*} customMessage
  */
-export const logError = (error, customMessage = null, isStack = true) => {
-  switch (getEnv('OUTPUT_TYPE')) {
+export const logError = (error, customMessage = null, isStack = true, outputType) => {
+  switch (outputType) {
     case 'terminal':
       logger.error(error.message);
       logger.error(error.stack);

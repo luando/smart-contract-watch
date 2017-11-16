@@ -1,7 +1,7 @@
 import rp from 'request-promise';
 import fs from 'fs';
 import path from 'path';
-import { getEnv, networksById } from './config';
+import { networksById } from './config';
 import web3Utils from './web3/utils';
 
 
@@ -32,7 +32,7 @@ const validateResponse = (response) => {
  *   @return object
  */
 
-const scrapeABI = async (address) => {
+const scrapeABI = async (address, accessToken) => {
   const networkID = web3Utils.getEtherNetworkId();
 
   if (!networksById[networkID]) {
@@ -45,7 +45,7 @@ const scrapeABI = async (address) => {
     qs: {
       action: 'getabi',
       address,
-      access_token: getEnv('ACCESS_TOKEN'),
+      access_token: accessToken,
     },
     headers: {
       'User-Agent': 'Request-Promise',
@@ -64,13 +64,13 @@ const scrapeABI = async (address) => {
  *   @param address
  *   @return Objcet(JSON)
  */
-export const getABI = async (address) => {
+export const getABI = async (address, variableClass) => {
   const dirPath = path.join(__dirname, '..', 'contracts');
   const jsonPath = path.join(dirPath, `${address}.json`);
   if (!fs.existsSync(dirPath)) { fs.mkdirSync(dirPath); }
 
   if (!fs.existsSync(jsonPath)) {
-    const abi = await scrapeABI(address);
+    const abi = await scrapeABI(address, variableClass.accessToken);
     fs.writeFileSync(jsonPath, JSON.stringify(abi));
     return abi;
   }

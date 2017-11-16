@@ -2,7 +2,7 @@ import fs from 'fs';
 import bluebird from 'bluebird';
 import { defaultBlockNumber, defaultFromBlockNumber } from './config';
 import web3 from './web3/web3Provider';
-import logger, { logError } from './logger';
+import { logError } from './logger';
 import { isInArray, isQueriedTransaction } from './utils';
 import { isAddress, validateBlockNumber } from './web3/utils';
 import initCustomRPCs from './web3/customRpc';
@@ -15,7 +15,8 @@ export default class JsonRpc {
    * @param int toBlock
    * @param function callback
    */
-  constructor(addresses, fromBlock, toBlock, lastBlockNumberFilePath = null, callback = null) {
+  constructor(addresses, fromBlock, toBlock,
+    lastBlockNumberFilePath = null, logger, callback = null) {
     this.addresses = addresses.map((address) => {
       if (!isAddress(address)) { throw new Error(`${address} is not valid address`); }
       return address.toLowerCase();
@@ -25,8 +26,9 @@ export default class JsonRpc {
     this.toBlock = toBlock !== defaultBlockNumber ? toBlock : null;
     this.web3Instance = web3.eth;
     this.callback = callback;
+    this.logger = logger;
     if (!callback) {
-      logger.info('Warning!: No callback function defined');
+      this.logger.info('Warning!: No callback function defined');
     }
     this.lastBlockNumberFilePath = lastBlockNumberFilePath;
   }
@@ -102,9 +104,9 @@ export default class JsonRpc {
 
   /**
    * This function handles the transactions that exist in one block
-   *  and puts them into an array of promises, then executes them and finally 
+   *  and puts them into an array of promises, then executes them and finally
    * send them to the output module;
-   * @param Object block 
+   * @param Object block
    */
   async scanSlowMode(block) {
     if (block && block.transactions && Array.isArray(block.transactions)) {
@@ -151,8 +153,8 @@ export default class JsonRpc {
   }
 
   /**
-   * This function getting the logs out per block 
-   * @param {*} block 
+   * This function getting the logs out per block
+   * @param {*} block
    */
   async scanFastMode(block) {
     const arrayOflogs = await this.getLogsFromOneBlock();
@@ -180,7 +182,7 @@ export default class JsonRpc {
     while ((this.toBlock && this.toBlock >= this.currentBlock) || (this.toBlock == null)) {
       try {
         if (this.currentBlock > lastBlockNumber) {
-          logger.info('Waiting 10 seconds until the incoming blocks');
+          this.logger.info('Waiting 10 seconds until the incoming blocks');
           await bluebird.delay(10000);
           lastBlockNumber = await bluebird.promisify(this.web3Instance.getBlockNumber)();
         } else {
@@ -193,7 +195,7 @@ export default class JsonRpc {
             await this.scanSlowMode(block);
           }
           this.currentBlock = parseInt(this.currentBlock, 10) + 1;
-          logger.debug(`Current block number is ${this.currentBlock}`);
+          this.logger.debug(`Current block number is ${this.currentBlock}`);
 
           // @TODO: Move file writing outside of this module
           if (this.lastBlockNumberFilePath) {
